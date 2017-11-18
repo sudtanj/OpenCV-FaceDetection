@@ -8,28 +8,38 @@
 using namespace std;
 using namespace cv;
 
+int input_Mode = 0;
+Mat image;
+string windowName = "Face Detection";
+CascadeClassifier face_cascade;
+std::vector<Rect> faces;
+void scanFaces() {
+	face_cascade.detectMultiScale(image, faces, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, Size(30, 30));
+}
+
 int main()
 {
-	Mat image = imread("lena.jpg", CV_LOAD_IMAGE_COLOR);
+	namedWindow(windowName);
+	VideoCapture cap;
+	createTrackbar("Input Mode", windowName, &input_Mode, 1);
+	face_cascade.load("lbpcascade_frontalface.xml");
 
-	// Load Face cascade (.xml file)
-	CascadeClassifier face_cascade;
-	face_cascade.load("D:/opencv/build/etc/haarcascades/haarcascade_frontalface_alt2.xml");
-
-	// Detect faces
-	std::vector<Rect> faces;
-	face_cascade.detectMultiScale(image, faces, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, Size(30, 30));
-
-	// Draw circles on the detected faces
-	for (int i = 0; i < faces.size(); i++)
-	{
-		rectangle(image, faces[i], Scalar(255, 0, 255));
-		//Point center(faces[i].x + faces[i].width*0.5, faces[i].y + faces[i].height*0.5);
-		//ellipse(image, center, Size(faces[i].width*0.5, faces[i].height*0.5), 0, 0, 360, Scalar(255, 0, 255), 4, 8, 0);
+	while (!(waitKey(30) >= 0)) {
+		if (input_Mode==1) {
+			if (!cap.isOpened()) 
+				cap.open(0);
+			cap >> image;
+		}
+		else {
+			if (cap.isOpened()) 
+				cap.release();
+			image = imread("lena.jpg", CV_LOAD_IMAGE_COLOR);
+		}
+		scanFaces();
+		for (Rect temp : faces) 
+			rectangle(image, temp, Scalar(255, 0, 255));
+		imshow(windowName, image);
 	}
 
-	imshow("Detected Face", image);
-
-	waitKey(0);
-	return 0;
+	return EXIT_SUCCESS;
 }

@@ -52,10 +52,11 @@ int main()
 	vector<Mat> images;
 	vector<int> labels;
 	int prediction, index;
+	double confidence;
 	auto it=NULL;
 	//code
 	namedWindow(windowName);
-	image = imread("lena.jpg", CV_LOAD_IMAGE_COLOR);
+	image = imread("input.jpg", CV_LOAD_IMAGE_COLOR);
 	createTrackbar("Input Mode", windowName, &input_Mode, 1, &onInputChange);
 	face_cascade.load("lbpcascade_frontalface.xml");
 	try {
@@ -65,7 +66,7 @@ int main()
 		CV_Error(CV_StsError,"Error opening file, Reason: "+ e.msg);
 		exit(EXIT_FAILURE);
 	}
-	Ptr<BasicFaceRecognizer> model = createFisherFaceRecognizer();
+	Ptr<FaceRecognizer> model = createFisherFaceRecognizer();
 	model->train(images, labels);
 	while (!(waitKey(30) >= 0)) {
 		if (input_Mode == 1) 
@@ -75,12 +76,19 @@ int main()
 			rectangle(image, faces[i], Scalar(255, 0, 255));
 			cvtColor(image, face_gray, CV_BGR2GRAY);
 			resize(face_gray(faces[i]), face_resized, Size(images[0].cols, images[0].rows), 1.0, 1.0, INTER_CUBIC);
-			prediction = model->predict(face_resized);
+			model->predict(face_resized, prediction, confidence);
+			//Mat temp = image(faces[i]);
+			//resize(temp, temp, cvSize(200, 200));
+			//imwrite("face" + std::to_string(i) + ".jpg", temp);
 			auto it = std::find(labels.begin(), labels.end(), prediction);
 			if (it != labels.end())
 				index=std::distance(labels.begin(), it);
-			putText(image, format("Prediction = %d", prediction), Point(std::max(faces[i].tl().x - 10, 0), std::max(faces[i].tl().y - 10, 0)), FONT_HERSHEY_PLAIN, 1.0, CV_RGB(0, 255, 0), 2.0);
+			if(prediction==1)
+				putText(image, "Robert Downey Jr.", Point(std::max(faces[i].tl().x - 10, 0), std::max(faces[i].tl().y - 10, 0)), FONT_HERSHEY_PLAIN, 1.0, CV_RGB(183, 100, 173), 2.0);
+			else
+				putText(image, "Arnold Schwarzenegger", Point(std::max(faces[i].tl().x - 10, 0), std::max(faces[i].tl().y - 10, 0)), FONT_HERSHEY_PLAIN, 1.0, CV_RGB(183, 100, 173), 2.0);
 		}
+		cout<<"Confidence : "<<confidence<<endl;
 		imshow(windowName, image);
 		imshow("Face in Database", images[index]);
 	}
